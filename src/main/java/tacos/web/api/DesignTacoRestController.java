@@ -1,14 +1,17 @@
 package tacos.web.api;
 
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.hateoas.Resources;
+import org.springframework.hateoas.mvc.ControllerLinkBuilder;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import tacos.Taco;
 import tacos.data.TacoRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 
@@ -25,10 +28,19 @@ public class DesignTacoRestController {
     }
 
     @GetMapping("/recent")
-    public Iterable<Taco> recentTacos() {
-        Pageable page = PageRequest.of(
+    public Resources<TacoResource> recentTacos() {
+        PageRequest page = PageRequest.of(
                 0, 12, Sort.by("createdAt").descending());
-        return tacoRepo.findAll(page);
+
+        Iterable<Taco> tacos = tacoRepo.findAll(page);
+        List<TacoResource> tacoResources = new TacoResourceAssembler().toResources(tacos);
+        Resources<TacoResource> recentResources = new Resources<>(tacoResources);
+
+        recentResources.add(
+                ControllerLinkBuilder.linkTo(DesignTacoRestController.class)
+                        .slash("recent")
+                        .withRel("recents"));
+        return recentResources;
     }
 
     @GetMapping("/{id}")
@@ -38,6 +50,20 @@ public class DesignTacoRestController {
             return new ResponseEntity<>(optTaco.get(), HttpStatus.OK);
         }
         return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
+    }
+
+    @PostMapping(consumes="application/json")
+    @ResponseStatus(HttpStatus.CREATED)
+    public Taco postTaco(@RequestBody Taco taco) {
+        return tacoRepo.save(taco);
+    }
+
+    @DeleteMapping("/{orderId}")
+    @ResponseStatus(code=HttpStatus.NO_CONTENT)
+    public void deleteOrder(@PathVariable("orderId") Long orderId) {
+        try {
+            tacoRepo.deleteById(orderId);
+        } catch (EmptyResultDataAccessException e) {}
     }
 }
 
