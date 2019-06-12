@@ -23,5 +23,4 @@ public class TacoResource extends ResourceSupport {
         this.createdAt = taco.getCreatedAt();
         this.ingredients = ingredientAssembler.toResources(taco.getIngredients());
     }
-
 }
