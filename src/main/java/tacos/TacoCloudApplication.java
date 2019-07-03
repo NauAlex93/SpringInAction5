@@ -1,5 +1,6 @@
 package tacos;
 
+import org.apache.activemq.artemis.jms.client.ActiveMQQueue;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -14,6 +15,7 @@ import tacos.data.IngredientRepository;
 import tacos.data.TacoRepository;
 import tacos.data.UserRepository;
 
+import javax.jms.Destination;
 import java.net.URI;
 import java.util.Arrays;
 
@@ -30,6 +32,11 @@ public class TacoCloudApplication {
     Traverson traverson = new Traverson(
             URI.create("http://localhost:8080/api"), MediaTypes.HAL_JSON);
     return traverson;
+  }
+
+  @Bean
+  public Destination orderQueue() {
+    return new ActiveMQQueue("tacocloud.order.queue");
   }
 
   public static void main(String[] args) {

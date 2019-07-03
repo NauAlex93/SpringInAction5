@@ -3,6 +3,7 @@ import javax.validation.Valid;
 
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.support.SessionStatus;
 import tacos.Order;
 import tacos.User;
 import tacos.data.OrderRepository;
+import tacos.messaging.OrderMessagingService;
 
 @Controller
 @RequestMapping("/orders")
@@ -20,13 +22,14 @@ import tacos.data.OrderRepository;
 public class OrderController {
   
   private OrderRepository orderRepo;
-
   private OrderProps props;
+  private OrderMessagingService orderMessages;
 
   public OrderController(OrderRepository orderRepo,
-                         OrderProps props) {
+                         OrderProps props, OrderMessagingService orderMessages) {
     this.orderRepo = orderRepo;
     this.props = props;
+    this.orderMessages = orderMessages;
   }
 
   @GetMapping("/current")
@@ -49,6 +52,13 @@ public class OrderController {
     }
 
     return "orderForm";
+  }
+
+  @PostMapping(path="/save", consumes="application/json")
+  @ResponseStatus(HttpStatus.CREATED)
+  public Order postOrder(@RequestBody Order order) {
+    orderMessages.sendOrder(order);
+    return orderRepo.save(order);
   }
 
   @PostMapping
